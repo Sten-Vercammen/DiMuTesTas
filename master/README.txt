@@ -1,0 +1,1 @@
+Docker build folder to create the initiator.
