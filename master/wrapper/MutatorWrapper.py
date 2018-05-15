@@ -48,6 +48,13 @@ from ReportGenerator import ReportGenerator
 # TimeIt module
 import TimeIt
 
+import logging
+
+LOG_FORMAT = ('%(levelname) -10s %(asctime)s %(name) -30s %(funcName) '
+              '-35s %(lineno) -5d: %(message)s')
+LOGGER = logging.getLogger(__name__)
+
+
 actual_options = None
 
 @TimeIt.time_func
@@ -56,10 +63,10 @@ def copyDirectory(src, dest):
         shutil.copytree(src, dest)
     # Directories are the same
     except shutil.Error as e:
-        print('Directory not copied. Error: %s' % e)
+        LOGGER.debug('Directory not copied. Error: %s' % e)
     # Any error saying that the directory doesn't exist
     except OSError as e:
-        print('Directory not copied. Error: %s' % e)
+        LOGGER.debug('Directory not copied. Error: %s' % e)
 
 
 def optionParser():
@@ -152,7 +159,7 @@ def get_file_names():
     try:
         assert os.path.isdir(options.sourcePath)
     except AssertionError as exception:
-        print "source path must be a directory."
+        LOGGER.debug("source path must be a directory.")
         sys.exit(1)
 
     # getting the list of files.
@@ -181,7 +188,7 @@ def initial_build():
                     buildDir = os.path.abspath(options.buildPath)
 
             except AssertionError as exception:
-                print "build system working directory should be a directory."
+                LOGGER.debug("build system working directory should be a directory.")
 
             # use build command for the initial build unless it is explicitly provided.
             if options.initialBuildCommand == "***dummy***":
@@ -189,7 +196,7 @@ def initial_build():
             else:
                 commandString = options.initialBuildCommand.split(',')
 
-            print "Initial build... ",
+            LOGGER.info("Initial build... ")
 
             try:
                 processKilled, processExitCode, initialOutput = LittleDarwin.timeoutAlternative(commandString,
@@ -204,16 +211,16 @@ def initial_build():
                     with open(os.path.abspath(os.path.join(options.sourcePath, os.path.pardir, "mutated", "initialbuild.txt")),
                               'w+') as content_file:
                         content_file.write(initialOutput)
-                print "done.\n\n"
+                LOGGER.info("done.\n\n")
 
             except subprocess.CalledProcessError as exception:
                 initialOutput = exception.output
                 with open(os.path.abspath(os.path.join(options.sourcePath, os.path.pardir, "mutated", "initialbuild.txt")),
                           'w+') as content_file:
                     content_file.write(initialOutput)
-                print exception
-                print initialOutput
-                print "failed.\n\nInitial build failed. Try building the system manually first to make sure it can be built."
+                LOGGER.info( "failed.\n\nInitial build failed. Try building the system manually first to make sure it can be built.:")
+                LOGGER.info(exception)
+                LOGGER.info(initialOutput)
                 sys.exit(1)
 
         copyDirectory('/root/.m2', '/usr/local/data/.m2')
@@ -240,7 +247,7 @@ def generate_mutants(srcFile):
         try:
             assert os.path.isdir(options.sourcePath)
         except AssertionError as exception:
-            print "source path must be a directory."
+            LOGGER.debug("source path must be a directory.")
             sys.exit(1)
 
         targetList = list()
@@ -254,7 +261,8 @@ def generate_mutants(srcFile):
 
         except Exception as e:
             # Java 8 problem
-            print "Error in parsing, skipping the file."
+            LOGGER.debug("Error in parsing, skipping the file:")
+            LOGGER.debug(e.message)
             sys.stderr.write(e.message)
             return [] #TODO how to handle this? (this works)
 
@@ -308,7 +316,7 @@ def process_mutant(key, replacementFileRel, replacementFile):
     original_f = False
     try:
         symlink_nfs()
-        print "testing mutant file: " + replacementFileRel
+        LOGGER.debug("testing mutant file: " + replacementFileRel)
 
         reportGenerator = ReportGenerator()
 
@@ -329,7 +337,7 @@ def process_mutant(key, replacementFileRel, replacementFile):
                 buildDir = os.path.abspath(options.buildPath)
 
         except AssertionError as exception:
-            print "build system working directory should be a directory."
+            LOGGER.debug("build system working directory should be a directory.")
 
 
         # check if we have separate test-suite
@@ -347,7 +355,7 @@ def process_mutant(key, replacementFileRel, replacementFile):
                         testDir = os.path.abspath(options.testPath)
 
                 except AssertionError as exception:
-                    print "test project build system working directory should be a directory."
+                    LOGGER.debug("test project build system working directory should be a directory.")
 
         else:
             separateTestSuite = False
@@ -554,6 +562,6 @@ def generate_report():
         with open(targetHTMLReportFile, 'w') as htmlReportFile:
             htmlReportFile.writelines(reportGenerator.generateHTMLFinalReport(htmlReportData, targetHTMLReportFile))
     except Exception as e:
-        print e
+        LOGGER.debug(e)
     finally:
         unlink_nfs()
