@@ -437,6 +437,7 @@ def process_mutant(key, replacementFileRel, replacementFile):
                 'replacementFile': replacementFile}
     finally:
         unlink_nfs()
+        reportGenerator.database.close()
         if original_f is not False:
             with open(os.path.join(options.sourcePath, key), 'r+') as f:
                 f.seek(0)
