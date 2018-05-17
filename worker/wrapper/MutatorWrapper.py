@@ -318,16 +318,6 @@ def process_mutant(key, replacementFileRel, replacementFile):
         symlink_nfs()
         LOGGER.debug("testing mutant file: " + replacementFileRel)
 
-        reportGenerator = ReportGenerator()
-
-        if options.alternateDb == "***dummy***":
-            databasePath = os.path.abspath(os.path.join(options.sourcePath, os.path.pardir, "mutated"))
-        else:
-            databasePath = options.alternateDb
-
-        resultsDatabasePath = databasePath + "-results"
-        reportGenerator.initiateDatabase(resultsDatabasePath)
-
         try:
             if os.path.basename(options.buildPath) == "pom.xml":
                 assert os.path.isfile(options.buildPath)
@@ -445,7 +435,6 @@ def process_mutant(key, replacementFileRel, replacementFile):
                 'replacementFile': replacementFile}
     finally:
         unlink_nfs()
-        reportGenerator.database.close()
         if original_f is not False:
             with open(os.path.join(options.sourcePath, key), 'r+') as f:
                 f.seek(0)
@@ -492,7 +481,7 @@ def process_result(key, success, replacementFile):
         unlink_nfs()
 
 @TimeIt.time_func
-def generate_report():
+def generate_report():    
     try:
         symlink_nfs()
         # all generated mutants are processed
