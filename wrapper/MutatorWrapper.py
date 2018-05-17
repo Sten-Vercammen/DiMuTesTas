@@ -475,7 +475,7 @@ def process_result(key, success, replacementFile):
                     failureList.append(os.path.basename(replacementFile))
                 statisticsDB[key] = (failureList, successList)
         finally:
-            if statisticsDB is not  None:
+            if statisticsDB is not None:
                 statisticsDB.close()
     finally:
         unlink_nfs()
@@ -553,4 +553,5 @@ def generate_report():
     except Exception as e:
         LOGGER.debug(e)
     finally:
+        reportGenerator.database.close()
         unlink_nfs()
